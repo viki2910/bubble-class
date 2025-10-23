@@ -1,0 +1,14 @@
+{
+  "name": "버블버블 슈터",
+  "short_name": "버블슈터",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1024",
+  "theme_color": "#0b1024",
+  "icons": [
+    { "src": "icons/192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "orientation": "portrait"
+}
