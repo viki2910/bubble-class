@@ -2,41 +2,33 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>버블버블 슈터</title>
 <style>
-  :root{
-    --bg:#0c1a2a; --panel:#0f2236; --text:#dbe7ff; --muted:#9fb6da;
-    --chip:#172c44; --chipText:#cfe0ff; --btn:#153450; --btnBd:#2c5c85;
-  }
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
-    font-family:ui-sans-serif,system-ui,Apple SD Gothic Neo,Segoe UI,Roboto,Helvetica,Arial}
-  .wrap{max-width:920px;margin:0 auto;padding:16px 16px 28px}
-  header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
-  h1{font-size:30px;margin:6px 0 8px 0}
-  .desc{margin:0 0 10px 0; color:#cfe4ff; line-height:1.45; font-size:15px}
-  .desc .strong{font-weight:800; color:#fff}
-  .chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .chip{background:var(--chip);border:1px solid #254760;color:var(--chipText);
-    padding:8px 12px;border-radius:12px;font-weight:800}
-  .btn{background:var(--btn);border:1px solid var(--btnBd);color:#e8f1ff;
-    padding:8px 14px;border-radius:12px;font-weight:800;cursor:pointer}
-  .btn:active{transform:translateY(1px)}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .nextWrap{display:flex;align-items:center;gap:8px}
-  .nextBubble{width:22px;height:22px;border-radius:50%;
-    border:2px solid rgba(255,255,255,.55);box-shadow:0 2px 6px rgba(0,0,0,.35)}
-  .infoBar{display:flex;align-items:center;gap:8px;padding:10px 12px;margin:8px 0 10px 0;
-    background:#123253;border:1px solid #2b5e8a;border-radius:12px;color:#d6ecff;font-size:14px}
-  .board{background:var(--panel);border:1px solid #1b3752;border-radius:18px;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);padding:14px}
-  canvas{display:block;margin:0 auto;width:100%;height:auto;max-width:480px;touch-action:none}
-  .hint{color:var(--muted);font-size:13.5px;text-align:center;margin-top:10px}
-  .overlay{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.55);z-index:50}
-  .card{background:#0e2034;border:1px solid #254760;border-radius:16px;padding:22px;max-width:360px}
-  .card h2{margin:0 0 8px 0}
-  .card p{margin:6px 0 0 0;color:#cbd9f6}
-  .help ul{padding-left:18px;margin:8px 0;color:#cbd9f6}
+  :root{ --bg:#0c1a2a; --panel:#0f2236; --text:#dbe7ff; --muted:#9fb6da; --chip:#172c44; --chipText:#cfe0ff; --btn:#153450; --btnBd:#2c5c85; }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--text);
+    font-family:ui-sans-serif,system-ui,Apple SD Gothic Neo,Segoe UI,Roboto,Helvetica,Arial }
+  .wrap{ max-width:920px; margin:0 auto; padding:16px 16px 28px }
+  header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap }
+  h1{ font-size:30px; margin:6px 0 8px 0 }
+  .desc{ margin:0 0 10px 0; color:#cfe4ff; line-height:1.45; font-size:15px }
+  .desc .strong{ font-weight:800; color:#fff }
+  .chips{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  .chip{ background:var(--chip); border:1px solid #254760; color:var(--chipText); padding:8px 12px; border-radius:12px; font-weight:800 }
+  .btn{ background:var(--btn); border:1px solid var(--btnBd); color:#e8f1ff; padding:8px 14px; border-radius:12px; font-weight:800; cursor:pointer }
+  .btn:active{ transform:translateY(1px) }
+  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .nextWrap{ display:flex; align-items:center; gap:8px }
+  .nextBubble{ width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,.55); box-shadow:0 2px 6px rgba(0,0,0,.35) }
+  .infoBar{ display:flex; align-items:center; gap:8px; padding:10px 12px; margin:8px 0 10px 0; background:#123253; border:1px solid #2b5e8a; border-radius:12px; color:#d6ecff; font-size:14px }
+  .board{ background:var(--panel); border:1px solid #1b3752; border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:14px }
+  canvas{ display:block; margin:0 auto; width:100%; height:auto; max-width:480px; touch-action:none }
+  .hint{ color:var(--muted); font-size:13.5px; text-align:center; margin-top:10px }
+  .overlay{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.55); z-index:50 }
+  .card{ background:#0e2034; border:1px solid #254760; border-radius:16px; padding:22px; max-width:360px }
+  .card h2{ margin:0 0 8px 0 } .card p{ margin:6px 0 0 0; color:#cbd9f6 }
+  .help ul{ padding-left:18px; margin:8px 0; color:#cbd9f6 }
 </style>
 </head>
 <body>
@@ -46,7 +38,7 @@
         <h1>버블버블 슈터</h1>
         <p class="desc">
           상단의 버블 무리를 향해 공을 발사해 <span class="strong">같은 색 3개 이상</span>을 연결하면 터집니다.
-          <br><span class="strong">상단의 버블 영역에서 원하는 지점(방향)을 탭/클릭하면</span> 그쪽으로 정확히 발사돼요.
+          <br><span class="strong">상단의 버블 영역에서 원하는 지점(방향)을 탭/클릭</span>하면 그쪽으로 정확히 발사돼요.
           발사 <span class="strong">5번</span>마다 윗줄이 한 칸 내려오니 빠르게 연결을 노려보세요!
         </p>
         <div class="row">
@@ -107,7 +99,7 @@
 
 <script>
 (() => {
-  // ===== Refs =====
+  // ==== Refs ====
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const scoreEl = document.getElementById('score');
@@ -124,32 +116,32 @@
   const helpRestart = document.getElementById('help-restart');
   const restartBtn = document.getElementById('restart');
 
-  // ===== Config =====
+  // ==== Config ====
   const COLORS = ['#4fc3f7','#ab47bc','#ff7043','#ffd54f','#66bb6a','#29b6f6','#ec407a','#9ccc65'];
   const MAX_CANVAS_W = 480, SAFE_BOTTOM = 60, INIT_ROWS = 5;
   const SHOTS_PER_NEWROW = 5, SCORE_PER_BUBBLE = 10, TOP_OFFSET = 18;
 
-  // ===== CSS px sizes (고정 단위) =====
+  // ==== Sizes (CSS px 기준) ====
   let CSS_W=360, CSS_H=486, DPR=1;
 
   // Hex layout
   let R=16, H_SP=32, V_SP=28, GRID_COLS=12, GRID_ROWS=22;
 
-  // ===== State =====
-  let grid=[];
-  let shooter={x:0,y:0,angle:-Math.PI/2};
-  let active=null;
-  let nextColor=rand();
+  // ==== State ====
+  let grid=[], shooter={x:0,y:0,angle:-Math.PI/2}, active=null, nextColor=rand();
   let score=0, shots=0, shotsLeft=SHOTS_PER_NEWROW, gameOver=false;
 
-  // ===== Utils =====
+  // ==== Utils ====
   function rand(){ return COLORS[(Math.random()*COLORS.length)|0]; }
   function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
   function dist2(x1,y1,x2,y2){ const dx=x1-x2, dy=y1-y2; return dx*dx+dy*dy; }
 
-  // ===== Resize (CSS px 기준 고정) =====
+  // ==== Resize: 부모(.board) 너비 기준 ====
   function resize(){
-    CSS_W = Math.min(window.innerWidth*0.95, MAX_CANVAS_W);
+    const board = document.querySelector('.board');
+    const pad = 28; // .board padding (좌우 14px씩) 보정
+    const avail = Math.max(200, board.clientWidth - pad);
+    CSS_W = Math.min(avail, MAX_CANVAS_W);
     CSS_H = Math.round(CSS_W*1.35);
     DPR = window.devicePixelRatio || 1;
 
@@ -157,11 +149,10 @@
     canvas.style.height = CSS_H+'px';
     canvas.width  = Math.round(CSS_W*DPR);
     canvas.height = Math.round(CSS_H*DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0); // 이후 좌표: CSS px 기준
+    ctx.setTransform(DPR,0,0,DPR,0,0);
 
     R = Math.max(13, Math.min(18, Math.round(CSS_W/30)));
-    H_SP = 2*R;
-    V_SP = Math.sqrt(3)*R*0.95;
+    H_SP = 2*R; V_SP = Math.sqrt(3)*R*0.95;
 
     GRID_COLS = Math.max(10, Math.floor((CSS_W - R)/H_SP));
     GRID_ROWS = Math.floor((CSS_H - TOP_OFFSET - SAFE_BOTTOM)/V_SP) - 1;
@@ -169,42 +160,34 @@
     shooter = { x: CSS_W/2, y: CSS_H - SAFE_BOTTOM/2, angle: -Math.PI/2 };
   }
 
-  // ===== Grid helpers =====
+  // ==== Grid ====
   function newGrid(){
     grid = Array.from({length: GRID_ROWS}, ()=> Array(GRID_COLS).fill(null));
-    for(let r=0;r<INIT_ROWS;r++){
-      for(let c=0;c<colN(r);c++) grid[r][c] = rand();
-    }
+    for(let r=0;r<INIT_ROWS;r++){ for(let c=0;c<colN(r);c++) grid[r][c]=rand(); }
   }
   function colN(r){ return GRID_COLS - (r%2?1:0); }
-  function cellToXY(r,c){ return { x: R + (r%2?R:0) + c*H_SP + R, y: TOP_OFFSET + r*V_SP + R }; }
+  function cellToXY(r,c){ return { x:R + (r%2?R:0) + c*H_SP + R, y:TOP_OFFSET + r*V_SP + R }; }
   function xyToCell(x,y){
-    let r = Math.round((y - TOP_OFFSET - R)/V_SP); r = clamp(r,0,GRID_ROWS-1);
-    const off = (r%2?R:0) + R;
-    let c = Math.round((x - off)/H_SP); c = clamp(c,0,colN(r)-1);
+    let r=Math.round((y - TOP_OFFSET - R)/V_SP); r=clamp(r,0,GRID_ROWS-1);
+    const off=(r%2?R:0)+R; let c=Math.round((x-off)/H_SP); c=clamp(c,0,colN(r)-1);
     return {r,c};
   }
   function neigh(r,c){
-    const odd = r%2===1;
-    const list = [[r,c-1],[r,c+1],[r-1,c-(odd?0:1)],[r-1,c+(odd?1:0)],[r+1,c-(odd?0:1)],[r+1,c+(odd?1:0)]];
+    const odd=r%2===1;
+    const list=[[r,c-1],[r,c+1],[r-1,c-(odd?0:1)],[r-1,c+(odd?1:0)],[r+1,c-(odd?0:1)],[r+1,c+(odd?1:0)]];
     return list.filter(([rr,cc])=>rr>=0&&rr<GRID_ROWS&&cc>=0&&cc<colN(rr));
   }
   function isInside(r,c){ return r>=0&&r<GRID_ROWS&&c>=0&&c<colN(r); }
   function isEmpty(r,c){ return isInside(r,c) && !grid[r][c]; }
 
-  // ===== Game flow =====
+  // ==== Flow ====
   function endGame(){ gameOver=true; finalScoreEl.textContent=String(score); shotsUsedEl.textContent=String(shots); overlay.style.display='grid'; }
   function addTopRow(){
     grid.pop(); grid.unshift(Array(GRID_COLS).fill(null));
     for(let c=0;c<colN(0);c++) grid[0][c]=rand();
     // bottom check
-    for(let r=GRID_ROWS-1;r>=0;r--){
-      for(let c=0;c<colN(r);c++){
-        if(grid[r][c]){
-          const {y}=cellToXY(r,c);
-          if(y+R>=shooter.y-R){ endGame(); return; }
-        }
-      }
+    for(let r=GRID_ROWS-1;r>=0;r--) for(let c=0;c<colN(r);c++){
+      if(grid[r][c]){ const {y}=cellToXY(r,c); if(y+R>=shooter.y-R){ endGame(); return; } }
     }
   }
   function reset(){
@@ -214,48 +197,37 @@
     resize(); newGrid(); active=null; nextColor=rand(); nextColorEl.style.background=nextColor;
   }
 
-  // ===== Input & shooting =====
+  // ==== Input (Pointer Events) ====
   function aim(mx,my){
     const dx=mx-shooter.x, dy=my-shooter.y; let a=Math.atan2(dy,dx);
-    if(a>-0.1) a=-0.1; if(a<-Math.PI+0.1) a=-Math.PI+0.1; shooter.angle=a;
+    if(a>-0.1)a=-0.1; if(a<-Math.PI+0.1)a=-Math.PI+0.1; shooter.angle=a;
   }
   function shoot(mx,my){
     if(gameOver||active) return;
     aim(mx,my);
-    const speed = Math.max(320, Math.min(560, R*28));
-    active = { x: shooter.x, y: shooter.y, vx: Math.cos(shooter.angle)*speed, vy: Math.sin(shooter.angle)*speed, color: nextColor };
-    nextColor = rand(); nextColorEl.style.background = nextColor;
-    shots++; shotsLeft--; if(shotsLeft<=0){ addTopRow(); shotsLeft = SHOTS_PER_NEWROW; }
-    rowsLeftEl.textContent = String(shotsLeft);
+    const speed=Math.max(320,Math.min(560,R*28));
+    active={x:shooter.x,y:shooter.y,vx:Math.cos(shooter.angle)*speed,vy:Math.sin(shooter.angle)*speed,color:nextColor};
+    nextColor=rand(); nextColorEl.style.background=nextColor;
+    shots++; shotsLeft--; if(shotsLeft<=0){ addTopRow(); shotsLeft=SHOTS_PER_NEWROW; }
+    rowsLeftEl.textContent=String(shotsLeft);
   }
+  function rel(e){ const r=canvas.getBoundingClientRect(); return { x:(e.clientX??0)-r.left, y:(e.clientY??0)-r.top }; }
+  canvas.addEventListener('pointermove', e=>{ if(e.pointerType==='touch'||e.pointerType==='pen'||e.buttons===1){ const p=rel(e); aim(p.x,p.y);} });
+  canvas.addEventListener('pointerdown', e=>{ e.preventDefault(); const p=rel(e); shoot(p.x,p.y); }, {passive:false});
 
-  canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); aim(e.clientX-r.left, e.clientY-r.top); });
-  canvas.addEventListener('mousedown', e=>{ const r=canvas.getBoundingClientRect(); shoot(e.clientX-r.left, e.clientY-r.top); });
-  canvas.addEventListener('touchmove', e=>{ const t=e.touches[0], r=canvas.getBoundingClientRect(); aim(t.clientX-r.left, t.clientY-r.top); }, {passive:true});
-  canvas.addEventListener('touchstart', e=>{ const t=e.touches[0], r=canvas.getBoundingClientRect(); shoot(t.clientX-r.left, t.clientY-r.top); }, {passive:true});
-
-  // ===== Physics =====
+  // ==== Physics ====
   function update(dt){
     if(!active) return;
     active.x += active.vx*dt; active.y += active.vy*dt;
-
-    if(active.x <= R+2){ active.x=R+2; active.vx*=-1; }
-    if(active.x >= CSS_W - R - 2){ active.x=CSS_W - R - 2; active.vx*=-1; }
-
-    if(active.y <= TOP_OFFSET + R){ snap(); return; }
-
-    outer: for(let r=0;r<GRID_ROWS;r++){
-      for(let c=0;c<colN(r);c++){
-        const color=grid[r][c]; if(!color) continue;
-        const pos=cellToXY(r,c);
-        if(dist2(active.x,active.y,pos.x,pos.y) <= (2*R-1)**2){ snap(); break outer; }
-      }
+    if(active.x<=R+2){ active.x=R+2; active.vx*=-1; }
+    if(active.x>=CSS_W-R-2){ active.x=CSS_W-R-2; active.vx*=-1; }
+    if(active.y<=TOP_OFFSET+R){ snap(); return; }
+    outer: for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<colN(r);c++){
+      const col=grid[r][c]; if(!col) continue; const pos=cellToXY(r,c);
+      if(dist2(active.x,active.y,pos.x,pos.y)<=(2*R-1)**2){ snap(); break outer; }
     }
-
-    // bottom guard
-    if(active && active.y >= shooter.y - R){ snap(true); }
+    if(active && active.y>=shooter.y - R){ snap(true); } // bottom guard
   }
-
   function placeNear(r,c){
     if(isEmpty(r,c)){ grid[r][c]=active.color; return true; }
     const vis=new Set(), q=[[r,c]];
@@ -268,69 +240,46 @@
     }
     return false;
   }
-
   function snap(forceAbove=false){
     let {r,c}=xyToCell(active.x,active.y);
-    if(forceAbove) r = clamp(r-1,0,GRID_ROWS-1);
+    if(forceAbove) r=clamp(r-1,0,GRID_ROWS-1);
     if(!placeNear(r,c) && !placeNear(clamp(r-1,0,GRID_ROWS-1),c)){
-      for(let rr=0; rr<GRID_ROWS; rr++){
-        const cc=clamp(Math.round(c),0,colN(rr)-1);
-        if(placeNear(rr,cc)) break;
-      }
+      for(let rr=0; rr<GRID_ROWS; rr++){ const cc=clamp(Math.round(c),0,colN(rr)-1); if(placeNear(rr,cc)) break; }
     }
     active=null; resolve();
   }
-
   function resolve(){
-    // remove clusters (>=3)
     const toRemove=new Set();
-    for(let r=0;r<GRID_ROWS;r++){
-      for(let c=0;c<colN(r);c++){
-        const color=grid[r][c]; if(!color) continue;
-        const cluster=flood(r,c,color);
-        if(cluster.length>=3) cluster.forEach(k=>toRemove.add(k));
-      }
+    for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<colN(r);c++){
+      const color=grid[r][c]; if(!color) continue;
+      const cluster=flood(r,c,color); if(cluster.length>=3) cluster.forEach(k=>toRemove.add(k));
     }
     if(toRemove.size){
       toRemove.forEach(k=>{ const [rr,cc]=k.split(',').map(Number); grid[rr][cc]=null; });
       score += toRemove.size * SCORE_PER_BUBBLE; scoreEl.textContent=String(score);
     }
     drop();
-    // bottom check
-    for(let r=0;r<GRID_ROWS;r++){
-      for(let c=0;c<colN(r);c++){
-        if(!grid[r][c]) continue;
-        const {y}=cellToXY(r,c);
-        if(y+R >= shooter.y - R){ endGame(); return; }
-      }
+    for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<colN(r);c++){
+      if(!grid[r][c]) continue; const {y}=cellToXY(r,c);
+      if(y+R>=shooter.y-R){ endGame(); return; }
     }
   }
-
   function flood(sr,sc,color){
     const vis=new Set(), out=[], q=[[sr,sc]];
-    while(q.length){
-      const [r,c]=q.pop(), key=r+','+c; if(vis.has(key)) continue; vis.add(key);
-      if(!isInside(r,c)||grid[r][c]!==color) continue;
-      out.push(key); neigh(r,c).forEach(n=>q.push(n));
-    }
+    while(q.length){ const [r,c]=q.pop(), key=r+','+c; if(vis.has(key)) continue; vis.add(key);
+      if(!isInside(r,c) || grid[r][c]!==color) continue; out.push(key); neigh(r,c).forEach(n=>q.push(n)); }
     return out;
   }
-
   function drop(){
-    const vis=new Set(), q=[];
-    for(let c=0;c<colN(0);c++) if(grid[0][c]) q.push([0,c]);
-    while(q.length){
-      const [r,c]=q.pop(), key=r+','+c; if(vis.has(key)) continue; vis.add(key);
+    const vis=new Set(), q=[]; for(let c=0;c<colN(0);c++) if(grid[0][c]) q.push([0,c]);
+    while(q.length){ const [r,c]=q.pop(), key=r+','+c; if(vis.has(key)) continue; vis.add(key);
       neigh(r,c).forEach(([rr,cc])=>{ if(grid[rr][cc]) q.push([rr,cc]); });
     }
-    let d=0;
-    for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<colN(r);c++){
-      if(grid[r][c] && !vis.has(r+','+c)){ grid[r][c]=null; d++; }
-    }
+    let d=0; for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<colN(r);c++) if(grid[r][c]&&!vis.has(r+','+c)){ grid[r][c]=null; d++; }
     if(d){ score += d*5; scoreEl.textContent=String(score); }
   }
 
-  // ===== Render =====
+  // ==== Render ====
   function bubble(x,y,color){
     ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2);
     const g=ctx.createRadialGradient(x-R/3,y-R/3,R*0.2,x,y,R);
@@ -340,50 +289,42 @@
     ctx.fillStyle='rgba(255,255,255,.25)'; ctx.fill();
     ctx.lineWidth=2; ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.stroke();
   }
-  function lighten(hex, amt){
+  function lighten(hex,amt){
     const c=parseInt(hex.slice(1),16); let r=(c>>16)&255,g=(c>>8)&255,b=c&255;
     r=Math.min(255,Math.round(r+(255-r)*amt));
     g=Math.min(255,Math.round(g+(255-g)*amt));
     b=Math.min(255,Math.round(b+(255-b)*amt));
     return `rgb(${r},${g},${b})`;
   }
-
   function draw(){
     ctx.clearRect(0,0,CSS_W,CSS_H);
-    // field bubbles
     for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<colN(r);c++){
-      const col=grid[r][c]; if(!col) continue;
-      const {x,y}=cellToXY(r,c); bubble(x,y,col);
+      const col=grid[r][c]; if(!col) continue; const {x,y}=cellToXY(r,c); bubble(x,y,col);
     }
-    // active or standby bubble
-    if(active){ bubble(active.x,active.y,active.color); }
-    else { bubble(shooter.x, shooter.y, nextColor); }
-    // aim line
+    if(active){ bubble(active.x,active.y,active.color); } else { bubble(shooter.x, shooter.y, nextColor); }
     ctx.globalAlpha=.5; ctx.beginPath();
     ctx.moveTo(shooter.x,shooter.y);
-    ctx.lineTo(shooter.x + Math.cos(shooter.angle)*80, shooter.y + Math.sin(shooter.angle)*80);
+    ctx.lineTo(shooter.x+Math.cos(shooter.angle)*80, shooter.y+Math.sin(shooter.angle)*80);
     ctx.lineWidth=4; ctx.strokeStyle='#9cc9ff'; ctx.stroke(); ctx.globalAlpha=1;
-    // floor line
     ctx.beginPath(); ctx.moveTo(8, shooter.y+R); ctx.lineTo(CSS_W-8, shooter.y+R);
     ctx.lineWidth=2; ctx.strokeStyle='#214f7a'; ctx.stroke();
   }
 
-  // ===== Loop & UI =====
+  // ==== Loop & wiring ====
   let last=0;
-  function tick(ts){
-    if(!last) last=ts;
-    const dt = Math.max(0.008, Math.min(0.02, (ts-last)/1000)); // 50~125fps
-    last = ts;
-    if(!gameOver){ update(dt); draw(); requestAnimationFrame(tick); }
-  }
-
+  function tick(ts){ if(!last) last=ts; const dt=Math.max(0.008,Math.min(0.02,(ts-last)/1000)); last=ts;
+    if(!gameOver){ update(dt); draw(); requestAnimationFrame(tick); } }
   restartBtn.addEventListener('click', reset);
   againBtn.addEventListener('click', reset);
   goHelpBtn.addEventListener('click', ()=>{ overlay.style.display='none'; helpBox.style.display='grid'; });
   helpBtn.addEventListener('click', ()=> helpBox.style.display='grid');
   helpClose.addEventListener('click', ()=> helpBox.style.display='none');
   helpRestart.addEventListener('click', ()=>{ helpBox.style.display='none'; reset(); });
-  window.addEventListener('resize', ()=>{ const wasActive=!!active; resize(); if(wasActive) active=null; });
+
+  // 화면 변화(회전/주소창 크기변화 등)에도 안정
+  ['resize','orientationchange','visibilitychange'].forEach(ev=>{
+    window.addEventListener(ev, ()=>{ const wasActive=!!active; resize(); if(wasActive) active=null; });
+  });
 
   // Start
   window.onload = () => { reset(); requestAnimationFrame(tick); };
