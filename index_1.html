@@ -2,417 +2,67 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>버블버블 슈터</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>버블버블 슈터 (모바일 대응)</title>
   <style>
     :root{--bg:#0b1024;--panel:#111827;--text:#e5e7eb;--accent:#38bdf8}
     html,body{height:100%;margin:0}
-    body{display:grid;place-items:center;background:radial-gradient(1200px 800px at 70% -20%, #1f2937, #0b1024 60%, #050816 100%);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,sans-serif;color:var(--text)}
-    .wrap{width:min(800px,96vw)}
-    .hud{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;background:rgba(17,24,39,.65);backdrop-filter:blur(4px);border:1px solid #263146;border-bottom:none;border-radius:16px 16px 0 0;padding:.5rem 1rem}
-    .title{font-weight:700;letter-spacing:.3px}
+    body{
+      display:grid;place-items:center;
+      background:radial-gradient(1200px 800px at 70% -20%, #1f2937, #0b1024 60%, #050816 100%);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,sans-serif;color:var(--text);
+      overflow:hidden;               /* 스크롤 방지 */
+      touch-action:none;             /* 더블탭 확대 방지용 */
+    }
+    .wrap{width:100vw; max-width:560px}
+    .hud{
+      display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;
+      background:rgba(17,24,39,.65);backdrop-filter:blur(4px);
+      border:1px solid #263146;border-bottom:none;border-radius:16px 16px 0 0;
+      padding:.5rem .8rem
+    }
+    .title{font-weight:700;letter-spacing:.2px;font-size:clamp(14px,3.2vw,16px)}
     .btns{display:flex;gap:.5rem}
     button{all:unset;background:#0f172a;border:1px solid #273247;padding:.35rem .7rem;border-radius:10px;cursor:pointer}
-    button:hover{background:#14213a}
-    canvas{display:block;background:linear-gradient(#0a1227,#071022);border:1px solid #263146;border-radius:0 0 16px 16px}
-    .tips{font-size:.9rem;opacity:.9;margin-top:.5rem;text-align:center}
-    a{color:#a0e7ff}
+    button:active{transform:scale(.98)}
+    canvas{display:block;background:linear-gradient(#0a1227,#071022);border:1px solid #263146;border-radius:0 0 16px 16px;width:100%}
+    .tips{font-size:12px;opacity:.9;margin-top:.4rem;text-align:center}
+    @media (min-width:600px){ .wrap{max-width:800px} }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="hud">
-      <div class="title">🎯 버블버블 슈터 — 같은 색 3개 이상 맞추면 제거!</div>
+      <div class="title">🎯 같은 색 3개 이상 맞추면 제거!</div>
       <div class="btns">
         <button id="btnRestart">재시작</button>
         <button id="btnAddRow" title="난이도 업! 위에서 한 줄 추가">한 줄 추가</button>
       </div>
     </div>
-    <canvas id="game" width="800" height="1000" aria-label="버블버블 게임 캔버스"></canvas>
-    <div class="tips">마우스(또는 터치)로 조준하고 클릭하면 발사합니다. Space: 발사 / A,D: 좌우 회전 / R: 재시작</div>
+    <canvas id="game" aria-label="버블버블 게임 캔버스"></canvas>
+    <div class="tips">터치로 조준/발사(탭). A/D 각도, Space 발사, R 재시작</div>
   </div>
 
   <script>
-  // =========================
-  // Bubble Shooter (Hex Grid)
-  // =========================
-  (()=>{
+  (()=> {
     const cvs = document.getElementById('game');
     const ctx = cvs.getContext('2d');
 
-    // --- Layout & Constants ---
-    const W = cvs.width;
-    const H = cvs.height;
+    // --------- 런타임 변하는 값(리사이즈 대응) ----------
+    let W = 360, H = 640;           // 논리 좌표(=CSS px)
+    const TOP_MARGIN = 70;          // 상단 UI 높이
+    const SIDE_MARGIN = 20;         // 좌우 여백
+    let LAUNCH_Y = H - 110;
 
-    const TOP_MARGIN = 70;        // 상단 여백 (UI용)
-    const LAUNCH_Y = H - 110;     // 발사대 Y
-    const R = 18;                 // 버블 반지름
-    const DIAM = R*2;
-    const COLS = 16;              // 짝수행 기준 열 수
-    const ROW_H = Math.sqrt(3) * R; // 육각 형태의 수직 간격
+    // 그리드 파라미터(폭에 맞춰 동적 설정)
+    let R = 18;                     // 버블 반지름
+    let DIAM = R*2;
+    let COLS = 12;                  // 짝수행 기준 열
+    let ROW_H = Math.sqrt(3) * R;
+
+    // 색상
     const COLORS = ['#ff6b6b','#ffd93d','#6bcB77','#4d96ff','#bb86fc','#ff9f1c'];
 
-    const MAX_ROWS_VISIBLE = Math.floor((H - TOP_MARGIN - 200) / ROW_H) + 2;
-
-    // 게임 상태
+    // 상태
     const state = {
-      grid: [],          // 2D grid: { color, row, col, x, y }
-      offsetRow: 0,      // 맨 위가 짝수행인지 여부 (0=짝,1=홀)
-      aimAngle: -Math.PI/2,
-      current: null,     // 날아가는 버블
-      nextColor: rndColor(),
-      score: 0,
-      shots: 0,
-      gameOver: false,
-      level: 1,
-    };
-
-    function rndColor(){ return COLORS[(Math.random()*COLORS.length)|0]; }
-
-    // --- Grid Helpers ---
-    function colCountForRow(row){
-      return COLS - ( ( (row + state.offsetRow) & 1 ) ? 1 : 0 );
-    }
-    function xForCell(row,col){
-      const odd = ((row + state.offsetRow) & 1);
-      const base = odd ? R + R : R; // 홀수행은 반칸 오른쪽으로
-      return base + col*DIAM + (odd?R:0) + 20; // 좌측 여백 20
-    }
-    function yForRow(row){ return TOP_MARGIN + row*ROW_H; }
-
-    function addRow(colors=null){
-      const row = [];
-      const cols = colCountForRow(0);
-      for(let c=0;c<cols;c++){
-        row.push({color: colors? colors[c]: rndColor(), row:0, col:c});
-      }
-      // 기존 행들의 row를 +1씩 밀기
-      for(const r of state.grid){ for(const b of r){ b.row++; } }
-      state.grid.unshift(row);
-      // 너무 아래로 내려오면 게임오버
-      for(const b of state.grid[state.grid.length-1]||[]){
-        if(yForRow(b.row) + R*1.2 >= LAUNCH_Y){ state.gameOver = true; }
-      }
-    }
-
-    function initGrid(rows=6){
-      state.grid = [];
-      state.offsetRow = 0;
-      for(let r=0;r<rows;r++) addRow();
-    }
-
-    function layoutGrid(){
-      for(let r=0;r<state.grid.length;r++){
-        const row = state.grid[r];
-        for(let c=0;c<row.length;c++){
-          const b = row[c];
-          b.x = xForCell(b.row,b.col);
-          b.y = yForRow(b.row);
-        }
-      }
-    }
-
-    function neighbors(cell){
-      // 육각 그리드 인접 좌표 (행 offset에 따라 좌우 다름)
-      const {row, col} = cell;
-      const odd = ((row + state.offsetRow) & 1);
-      const deltas = odd ? [
-        [0,-1],[0,1],[-1,0],[-1,1],[1,0],[1,1]
-      ]:[
-        [0,-1],[0,1],[-1,-1],[-1,0],[1,-1],[1,0]
-      ];
-      const res=[];
-      for(const [dr,dc] of deltas){
-        const rr=row+dr, cc=col+dc;
-        const rRow = state.grid.find(r=> r.length && r[0].row===rr);
-        if(!rRow) continue;
-        const n = rRow.find(b=> b.col===cc);
-        if(n) res.push(n);
-      }
-      return res;
-    }
-
-    function findCluster(start, matchColor=true){
-      const targetColor = start.color;
-      const visited=new Set();
-      const q=[start];
-      visited.add(start);
-      while(q.length){
-        const cur=q.shift();
-        for(const n of neighbors(cur)){
-          if(visited.has(n)) continue;
-          if(!matchColor || n.color===targetColor){ visited.add(n); q.push(n);}        
-        }
-      }
-      return [...visited];
-    }
-
-    function removeBubbles(list){
-      if(!list.length) return;
-      const mark = new Set(list);
-      for(const row of state.grid){
-        for(let i=row.length-1;i>=0;i--){ if(mark.has(row[i])) row.splice(i,1); }
-      }
-      // 빈 행 제거
-      for(let i=state.grid.length-1;i>=0;i--){ if(state.grid[i].length===0) state.grid.splice(i,1); }
-    }
-
-    function dropFloating(){
-      // 위쪽 테두리에 닿아있는 버블로부터 연결되지 않은 버블들은 떨어짐
-      const anchored = new Set();
-      const topRows = state.grid.filter(r=> r.length && r[0].row===0);
-      for(const r of topRows){
-        for(const b of r){ for(const v of findCluster(b,false)) anchored.add(v); }
-      }
-      const floating=[];
-      for(const row of state.grid){
-        for(const b of row){ if(!anchored.has(b)) floating.push(b); }
-      }
-      removeBubbles(floating);
-      return floating.length;
-    }
-
-    // --- Shooting Mechanics ---
-    function newBullet(){
-      state.current = {
-        x: W/2,
-        y: LAUNCH_Y,
-        vx: Math.cos(state.aimAngle)*7.5,
-        vy: Math.sin(state.aimAngle)*7.5,
-        color: state.nextColor,
-        flying: true
-      };
-      state.nextColor = rndColor();
-      state.shots++;
-    }
-
-    function canFire(){ return !state.gameOver && (!state.current || !state.current.flying); }
-
-    function reflectIfNeeded(b){
-      if(b.x <= R+20 && b.vx<0){ b.vx*=-1; b.x = R+20; }
-      if(b.x >= W-R-20 && b.vx>0){ b.vx*=-1; b.x = W-R-20; }
-    }
-
-    function collideOrTop(b){
-      if(b.y <= TOP_MARGIN + R){ return true; }
-      // 기존 버블과의 충돌 체크
-      for(const row of state.grid){
-        for(const p of row){
-          const dx=b.x-p.x, dy=b.y-p.y; if(dx*dx+dy*dy <= DIAM*DIAM-0.1){ return p; }
-        }
-      }
-      return false;
-    }
-
-    function snapToGrid(b, target){
-      // target 주위에서 가장 가까운 빈 셀 찾기
-      const candidates = [];
-      for(const n of [target, ...neighbors(target)]){
-        const odd = ((n.row + state.offsetRow) & 1);
-        const spots = odd ? [ [0,-1],[0,1],[-1,0],[-1,1],[1,0],[1,1] ] : [ [0,-1],[0,1],[-1,-1],[-1,0],[1,-1],[1,0] ];
-        for(const [dr,dc] of spots){
-          const rr=n.row+dr, cc=n.col+dc;
-          if(rr<0||cc<0) continue;
-          const existRow = state.grid.find(r=> r.length && r[0].row===rr);
-          let occupied=false;
-          if(existRow){ occupied = !!existRow.find(x=> x.col===cc); }
-          const cols = colCountForRow(rr);
-          if(cc>=cols) continue;
-          if(!occupied){
-            const x = xForCell(rr,cc), y=yForRow(rr);
-            const dist2=(b.x-x)*(b.x-x)+(b.y-y)*(b.y-y);
-            candidates.push({rr,cc,x,y,dist2});
-          }
-        }
-      }
-      if(!candidates.length){ // 비정상 케이스: 그냥 위에 붙이기
-        const rr = Math.max(0, Math.round((b.y-TOP_MARGIN)/ROW_H));
-        const cc = Math.round((b.x-20 - ( ((rr+state.offsetRow)&1)? DIAM: R*2 ))/DIAM);
-        return {row:rr,col:Math.max(0,cc)};
-      }
-      candidates.sort((a,b2)=>a.dist2-b2.dist2);
-      return {row:candidates[0].rr, col:candidates[0].cc};
-    }
-
-    function placeAndResolve(cell, color){
-      // 해당 row가 없으면 생성
-      let rowRef = state.grid.find(r=> r.length && r[0].row===cell.row);
-      if(!rowRef){
-        // 필요한 경우 중간 빈 행들도 만들어 준다
-        const maxRow = state.grid.length? Math.max(...state.grid.map(r=>r[0].row)) : -1;
-        for(let r=maxRow+1;r<=cell.row;r++) state.grid.push([]);
-        rowRef = state.grid.find(r=> r.length===0) || [];
-        // 위 루프 후 rowRef가 비었을 수 있으니 강제로 맞춰 넣기
-        rowRef.rowIndex = cell.row;
-        // grid의 각 빈 배열에 row 표시용 dummy를 넣자 -> 대신 아래 push에서 row, col을 세팅
-      }
-      // 해당 row의 실제 참조를 다시 구함 (row 값이 맞는 배열)
-      rowRef = state.grid.find(r=> r.length && r[0].row===cell.row) || (()=>{
-        const arr=[]; arr.push({color:'#00000000',row:cell.row,col:-999,ghost:true});
-        state.grid.push(arr);
-        return arr;
-      })();
-      // ghost 정리
-      for(let i=rowRef.length-1;i>=0;i--){ if(rowRef[i].ghost) rowRef.splice(i,1); }
-
-      const bubble = { color, row:cell.row, col:cell.col };
-      rowRef.push(bubble);
-
-      // 좌표 재계산
-      layoutGrid();
-
-      // 매치 판정
-      const cluster = findCluster(bubble,true);
-      let removed = 0;
-      if(cluster.length >= 3){ removeBubbles(cluster); removed += cluster.length; }
-      removed += dropFloating();
-
-      if(removed>0){ state.score += removed*10; }
-
-      // 난이도: 일정 발사 수마다 행 추가
-      if(state.shots>0 && state.shots%6===0){ state.level++; addRow(); layoutGrid(); }
-
-      // 승리 조건: 모든 버블 제거
-      const any = state.grid.some(r=> r.length);
-      if(!any){
-        state.gameOver = true;
-        toast('🎉 클리어! 점수: '+state.score);
-      }
-    }
-
-    // --- Input ---
-    let mouseX=W/2, mouseY=LAUNCH_Y-200;
-    cvs.addEventListener('mousemove', e=>{
-      const rect = cvs.getBoundingClientRect();
-      mouseX = (e.clientX-rect.left) * (cvs.width/rect.width);
-      mouseY = (e.clientY-rect.top) * (cvs.height/rect.height);
-      state.aimAngle = Math.atan2(mouseY-LAUNCH_Y, mouseX-W/2);
-      clampAim();
-    });
-    cvs.addEventListener('touchmove', e=>{
-      const t = e.touches[0]; if(!t) return;
-      const rect = cvs.getBoundingClientRect();
-      mouseX = (t.clientX-rect.left) * (cvs.width/rect.width);
-      mouseY = (t.clientY-rect.top) * (cvs.height/rect.height);
-      state.aimAngle = Math.atan2(mouseY-LAUNCH_Y, mouseX-W/2);
-      clampAim();
-      e.preventDefault();
-    }, {passive:false});
-
-    function clampAim(){
-      const min = -Math.PI + 0.15; // 좌측 171도
-      const max = -0.15;           // 우측 9도
-      if(state.aimAngle<min) state.aimAngle=min;
-      if(state.aimAngle>max) state.aimAngle=max;
-    }
-
-    function fire(){ if(canFire()) newBullet(); }
-
-    cvs.addEventListener('click', fire);
-    cvs.addEventListener('touchend', e=>{ fire(); e.preventDefault(); }, {passive:false});
-
-    window.addEventListener('keydown', e=>{
-      if(e.code==='Space'){ e.preventDefault(); fire(); }
-      if(e.key==='a' || e.key==='A'){ state.aimAngle -= 0.07; clampAim(); }
-      if(e.key==='d' || e.key==='D'){ state.aimAngle += 0.07; clampAim(); }
-      if(e.key==='r' || e.key==='R'){ restart(); }
-    });
-
-    document.getElementById('btnRestart').onclick=()=>restart();
-    document.getElementById('btnAddRow').onclick=()=>{ addRow(); layoutGrid(); };
-
-    // --- Rendering ---
-    function drawBubble(x,y,color,stroke=true){
-      ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2);
-      const g = ctx.createRadialGradient(x-R*0.4, y-R*0.4, R*0.3, x, y, R);
-      g.addColorStop(0,'#ffffff'); g.addColorStop(0.15,'#ffffff'); g.addColorStop(0.16,color);
-      g.addColorStop(1,color);
-      ctx.fillStyle=g; ctx.fill();
-      if(stroke){ ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.stroke(); }
-    }
-
-    function draw(){
-      ctx.clearRect(0,0,W,H);
-      // Top bar
-      ctx.fillStyle='rgba(0,0,0,.25)'; ctx.fillRect(0,0,W,TOP_MARGIN-4);
-      ctx.fillStyle='#cde7ff'; ctx.font='bold 18px system-ui,Segoe UI,Roboto';
-      ctx.fillText(`점수: ${state.score}  |  레벨: ${state.level}  |  발사수: ${state.shots}`, 16, 28);
-      if(state.gameOver){
-        ctx.fillStyle='#ffdde1'; ctx.fillText('게임이 끝났습니다. R: 재시작', 16, 52);
-      } else {
-        ctx.fillStyle='#a8ffec'; ctx.fillText('3개 이상 붙이면 제거됩니다. 떠있는 버블은 낙하!', 16, 52);
-      }
-
-      // Grid
-      for(const row of state.grid){
-        for(const b of row){ if(b.ghost) continue; drawBubble(b.x,b.y,b.color); }
-      }
-
-      // Launcher base
-      ctx.save();
-      ctx.translate(W/2, LAUNCH_Y);
-      // cannon
-      ctx.rotate(state.aimAngle);
-      ctx.fillStyle='#1e293b'; ctx.strokeStyle='#0ea5e9'; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.roundRect(-14,-14,90,28,14); ctx.fill(); ctx.stroke();
-      ctx.restore();
-
-      // current bullet
-      if(state.current){ drawBubble(state.current.x, state.current.y, state.current.color); }
-
-      // next preview
-      ctx.globalAlpha=.9;
-      ctx.fillStyle='#9ca3af'; ctx.fillText('다음:', W-150, 32);
-      drawBubble(W-80, 28, state.nextColor, false);
-      ctx.globalAlpha=1;
-    }
-
-    // --- Game Loop ---
-    let last=0;
-    function step(ts){
-      const dt = (ts-last)/16.6667; last=ts;
-      update(dt);
-      draw();
-      requestAnimationFrame(step);
-    }
-
-    function update(dt){
-      if(state.gameOver) return;
-      if(state.current && state.current.flying){
-        const b = state.current;
-        b.x += b.vx*dt; b.y += b.vy*dt;
-        reflectIfNeeded(b);
-        const hit = collideOrTop(b);
-        if(hit){
-          // 충돌 처리
-          b.flying=false;
-          const targetCell = hit===true ? {row:0,col: Math.max(0, Math.min(colCountForRow(0)-1, Math.round((b.x - ( ((state.offsetRow)&1)? R*2+20 : R+20 ))/DIAM)))} : snapToGrid(b, hit);
-          placeAndResolve(targetCell, b.color);
-          state.current=null;
-        }
-      }
-    }
-
-    // --- Utils ---
-    function toast(text){
-      // 간단 토스트
-      const el = document.createElement('div');
-      el.textContent = text;
-      el.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#0b1328;color:#dff7ff;border:1px solid #274966;padding:.4rem .7rem;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.35);z-index:9999;opacity:0;transition:opacity .2s ease';
-      document.body.appendChild(el);
-      requestAnimationFrame(()=>{ el.style.opacity=1; });
-      setTimeout(()=>{ el.style.opacity=0; setTimeout(()=>el.remove(),200); }, 1600);
-    }
-
-    function restart(){
-      state.grid=[]; state.score=0; state.shots=0; state.level=1; state.gameOver=false; state.nextColor=rndColor(); state.current=null;
-      initGrid(6); layoutGrid(); toast('🔄 재시작');
-    }
-
-    // --- Start ---
-    initGrid(6); layoutGrid();
-    requestAnimationFrame(step);
-  })();
-  </script>
-</body>
-</html>
+      grid: [], offsetRow: 0, aimAngle:
