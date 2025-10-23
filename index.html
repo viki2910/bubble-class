@@ -1,109 +1,187 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>버블버블 · Bubble Shooter</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>버블버블 슈터</title>
 <style>
-  :root{
-    --bg:#0c1a2a; --panel:#0f2236; --text:#dbe7ff; --muted:#89a7d6;
-    --chip:#172c44; --chipText:#cfe0ff; --accent:#4fc3f7;
+  body {
+    margin: 0;
+    background: #0b1425;
+    color: white;
+    font-family: "Noto Sans KR", sans-serif;
+    text-align: center;
   }
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,AppleSDGothicNeo,Segoe UI,Roboto,Helvetica,Arial;}
-  .wrap{max-width:900px;margin:0 auto;padding:16px 16px 28px;}
-  header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-  h1{font-size:22px;margin:0 0 8px 0;letter-spacing:.2px}
-  .chips{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .chip{background:var(--chip);border:1px solid #254760;color:var(--chipText);padding:8px 12px;border-radius:12px;font-weight:600}
-  .btn{background:#153450;border:1px solid #2c5c85;color:#e8f1ff;padding:8px 14px;border-radius:12px;font-weight:700;cursor:pointer}
-  .btn:active{transform:translateY(1px)}
-  .board{background:var(--panel);border:1px solid #1b3752;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:14px}
-  canvas{display:block;margin:0 auto;width:100%;height:auto;max-width:480px;touch-action:none}
-  .hint{color:var(--muted);font-size:14px;text-align:center;margin-top:10px}
-  .overlay{
-    position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.55);
+  h1 { margin-top: 20px; }
+  #gameContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
-  .card{background:#0e2034;border:1px solid #254760;border-radius:16px;padding:24px 22px;max-width:320px;text-align:center}
-  .card h2{margin:0 0 8px 0;font-size:22px}
-  .skull{filter:drop-shadow(0 4px 12px rgba(0,0,0,.7))}
-  .nextWrap{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
-  .nextLabel{color:#a9c4ea;font-size:14px}
-  .nextBubble{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.55);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  canvas {
+    background: #08111e;
+    width: 90vw;
+    max-width: 420px;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+  }
+  #info {
+    margin: 10px;
+    font-size: 16px;
+  }
+  button {
+    background: #1e3a8a;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>버블버블 · Bubble Shooter</h1>
-        <div class="chips">
-          <div class="chip">점수 <span id="score">0</span></div>
-          <div class="chip">남은줄 <span id="rows-left">5</span></div>
-          <button id="restart" class="btn">다시 시작</button>
-        </div>
-        <div class="nextWrap">
-          <span class="nextLabel">다음</span>
-          <div id="next-color" class="nextBubble" style="background:#4fc3f7"></div>
-        </div>
-      </div>
-    </header>
+  <h1>버블버블 슈터</h1>
+  <p>홈 화면에 추가해서 앱처럼 써보세요!</p>
 
-    <div class="board">
-      <canvas id="game" width="480" height="680" aria-label="Bubble Shooter"></canvas>
+  <div id="gameContainer">
+    <div id="info">
+      점수: <span id="score">0</span> | 남은 줄: <span id="rows">5</span>
     </div>
-    <p class="hint">마우스(또는 손가락)를 조준하고 클릭/탭하여 발사! · 같은 색 3개 이상이면 터집니다.</p>
-  </div>
-
-  <!-- Game Over Overlay -->
-  <div class="overlay" id="gameover">
-    <div class="card">
-      <h2>게임 오버 <span class="skull">💀</span></h2>
-      <p>최종 점수: <b id="final-score">0</b> · 발사수: <b id="shots-used">0</b></p>
-      <button id="again" class="btn">다시 시작</button>
-    </div>
+    <canvas id="gameCanvas"></canvas>
+    <button onclick="restartGame()">다시 시작</button>
   </div>
 
 <script>
-(() => {
-  // =============== Config ===============
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+const rowsEl = document.getElementById("rows");
 
-  const scoreEl = document.getElementById('score');
-  const rowsLeftEl = document.getElementById('rows-left');
-  const nextColorEl = document.getElementById('next-color');
-  const restartBtn = document.getElementById('restart');
-  const overlay = document.getElementById('gameover');
-  const finalScoreEl = document.getElementById('final-score');
-  const shotsUsedEl = document.getElementById('shots-used');
-  const againBtn = document.getElementById('again');
+canvas.width = Math.min(window.innerWidth * 0.9, 420);
+canvas.height = canvas.width * 1.2;
 
-  const COLORS = ['#4fc3f7','#ab47bc','#ff7043','#ffd54f','#66bb6a','#29b6f6','#ec407a','#9ccc65'];
-  const MAX_CANVAS_W = 480;
-  const SAFE_BOTTOM = 56;          // 바닥 여유
-  const INIT_ROWS = 5;             // 시작 행
-  const SHOTS_PER_NEWROW = 5;      // 발사 n번마다 윗줄 추가
-  const SCORE_PER_BUBBLE = 10;
+let bubbles = [];
+let colors = ["#ff6b6b", "#ffd93d", "#6bcB77", "#4d96ff", "#c77dff"];
+let shooter = { x: canvas.width / 2, y: canvas.height - 40, color: colors[0] };
+let score = 0;
+let rows = 5;
+let bullet = null;
 
-  // 벌집형(헥스) 레이아웃 파라미터
-  let R = 16;                      // 버블 반지름(반응형에서 갱신)
-  let H_SP = 2*R;                  // 가로 간격
-  let V_SP = Math.sqrt(3)*R;       // 세로 간격(≈1.732R)
-  let GRID_COLS = 12;              // 열 수(행 홀짝에 따라 오프셋)
-  let GRID_ROWS = 22;
-  const TOP_OFFSET = 20;           // 캔버스 상단 여백
+// 버블 초기화
+function initBubbles() {
+  bubbles = [];
+  const r = 15;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < 12; col++) {
+      if (row % 2 === 0 && col === 11) continue;
+      const x = col * r * 2 + (row % 2 === 0 ? r : 0);
+      const y = row * r * 2 + 30;
+      bubbles.push({ x, y, color: colors[Math.floor(Math.random() * colors.length)], r });
+    }
+  }
+}
 
-  // =============== State ===============
-  let grid;             // 2D 배열: 색상 코드 또는 null
-  let shooter;          // {x,y, angle}
-  let active = null;    // 날아가는 버블 {x,y, vx,vy, color}
-  let nextColor = randColor();
-  let score = 0;
-  let shots = 0;
-  let shotsLeft = SHOTS_PER_NEWROW;
-  let gameOver = false;
+// 버블 그리기
+function drawBubbles() {
+  bubbles.forEach(b => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = b.color;
+    ctx.fill();
+    ctx.closePath();
+  });
+}
 
-  // =============== Helpers ===============
-  function randColor(){ return COLORS[Math.floor(Math.random()*COLORS.length)]; }
-  function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
-  function dist2(x1,y1,x2,y2){ const dx=x1-x2, dy=y1-y2; ret
+// 발사체
+function drawShooter() {
+  ctx.beginPath();
+  ctx.arc(shooter.x, shooter.y, 15, 0, Math.PI * 2);
+  ctx.fillStyle = shooter.color;
+  ctx.fill();
+  ctx.closePath();
+}
+
+// 발사
+function shootBubble(targetX, targetY) {
+  if (bullet) return; // 이미 발사 중
+  const dx = targetX - shooter.x;
+  const dy = targetY - shooter.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  bullet = {
+    x: shooter.x,
+    y: shooter.y,
+    dx: (dx / len) * 5,
+    dy: (dy / len) * 5,
+    color: shooter.color,
+  };
+}
+
+// 게임 루프
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBubbles();
+  drawShooter();
+
+  if (bullet) {
+    bullet.x += bullet.dx;
+    bullet.y += bullet.dy;
+    ctx.beginPath();
+    ctx.arc(bullet.x, bullet.y, 10, 0, Math.PI * 2);
+    ctx.fillStyle = bullet.color;
+    ctx.fill();
+    ctx.closePath();
+
+    // 충돌 감지
+    for (let i = 0; i < bubbles.length; i++) {
+      const b = bubbles[i];
+      const dist = Math.sqrt((bullet.x - b.x) ** 2 + (bullet.y - b.y) ** 2);
+      if (dist < b.r + 10) {
+        bubbles.splice(i, 1);
+        score += 10;
+        scoreEl.textContent = score;
+        bullet = null;
+        shooter.color = colors[Math.floor(Math.random() * colors.length)];
+        break;
+      }
+    }
+
+    // 화면 밖이면 리셋
+    if (bullet && (bullet.y < 0 || bullet.x < 0 || bullet.x > canvas.width)) {
+      bullet = null;
+      shooter.color = colors[Math.floor(Math.random() * colors.length)];
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+// 이벤트 (터치 + 클릭)
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  shootBubble(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+canvas.addEventListener("touchstart", e => {
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  shootBubble(touch.clientX - rect.left, touch.clientY - rect.top);
+});
+
+// 다시 시작
+function restartGame() {
+  score = 0;
+  scoreEl.textContent = score;
+  rows = 5;
+  rowsEl.textContent = rows;
+  bullet = null;
+  shooter.color = colors[Math.floor(Math.random() * colors.length)];
+  initBubbles();
+}
+
+initBubbles();
+update();
+</script>
+</body>
+</html>
