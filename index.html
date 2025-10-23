@@ -7,14 +7,31 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b1024">
   <link rel="apple-touch-icon" href="icons/192.png">
-  <style>
-    html,body{height:100%;margin:0;background:#0b1024;color:#e5e7eb;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif}
-    .wrap{max-width:860px;margin:0 auto;padding:12px}
-    .bar{display:flex;align-items:center;justify-content:space-between;background:#111827;border:1px solid #263146;border-bottom:none;border-radius:16px 16px 0 0;padding:8px 12px}
-    .title{font-weight:700}
-    .frame{width:100%;height: calc(100vh - 120px);border:1px solid #263146;border-radius:0 0 16px 16px;background:#071022}
-    .hint{font-size:12px;opacity:.85;margin-top:8px;text-align:center}
-  </style>
+<style>
+canvas {
+  width: 100%;
+  height: auto;
+  max-width: 420px; /* 스마트폰 기준 너비 */
+  display: block;
+  margin: 0 auto;
+}
+</style>
+
+<script>
+const canvas = document.querySelector("canvas");
+canvas.width = window.innerWidth * 0.9;
+canvas.height = canvas.width * 1.2;
+
+// 터치 대응 추가
+canvas.addEventListener("touchstart", (e) => {
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  shootBubble(x, y);
+});
+</script>
+
 </head>
 <body>
   <div class="wrap">
