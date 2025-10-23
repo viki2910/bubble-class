@@ -1,187 +1,466 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>버블버블 슈터</title>
 <style>
-  body {
-    margin: 0;
-    background: #0b1425;
-    color: white;
-    font-family: "Noto Sans KR", sans-serif;
-    text-align: center;
+  :root{
+    --bg:#0c1a2a; --panel:#0f2236; --text:#dbe7ff; --muted:#9fb6da;
+    --chip:#172c44; --chipText:#cfe0ff;
+    --btn:#153450; --btnBd:#2c5c85; --accent:#4fc3f7;
   }
-  h1 { margin-top: 20px; }
-  #gameContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  canvas {
-    background: #08111e;
-    width: 90vw;
-    max-width: 420px;
-    height: auto;
-    display: block;
-    border-radius: 10px;
-  }
-  #info {
-    margin: 10px;
-    font-size: 16px;
-  }
-  button {
-    background: #1e3a8a;
-    border: none;
-    color: white;
-    padding: 10px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,Apple SD Gothic Neo,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:920px;margin:0 auto;padding:16px 16px 28px}
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  h1{font-size:28px;margin:6px 0 2px 0}
+  .sub{margin:0 0 10px 0;color:#c6d7f5b3}
+  .chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .chip{background:var(--chip);border:1px solid #254760;color:var(--chipText);padding:8px 12px;border-radius:12px;font-weight:700}
+  .btn{background:var(--btn);border:1px solid var(--btnBd);color:#e8f1ff;padding:8px 14px;border-radius:12px;font-weight:800;cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .board{background:var(--panel);border:1px solid #1b3752;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:14px}
+  canvas{display:block;margin:0 auto;width:100%;height:auto;max-width:480px;touch-action:none}
+  .hint{color:var(--muted);font-size:14px;text-align:center;margin-top:10px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .nextWrap{display:flex;align-items:center;gap:8px}
+  .nextBubble{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.55);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  /* Overlays */
+  .overlay{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.55);z-index:50}
+  .card{background:#0e2034;border:1px solid #254760;border-radius:16px;padding:22px;max-width:360px}
+  .card h2{margin:0 0 8px 0}
+  .card p{margin:6px 0 0 0;color:#cbd9f6}
+  .help ul{padding-left:18px;margin:8px 0;color:#cbd9f6}
 </style>
 </head>
 <body>
-  <h1>버블버블 슈터</h1>
-  <p>홈 화면에 추가해서 앱처럼 써보세요!</p>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>버블버블 슈터</h1>
+        <p class="sub">홈 화면에 추가해서 앱처럼 써보세요!</p>
+        <div class="row">
+          <div class="chips">
+            <div class="chip">점수 <span id="score">0</span></div>
+            <div class="chip">남은 줄 <span id="rows-left">5</span></div>
+          </div>
+          <div class="nextWrap">
+            <span style="color:#a9c4ea;font-size:14px">다음</span>
+            <div id="next-color" class="nextBubble" style="background:#4fc3f7"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="help" class="btn">도움말</button>
+        <button id="restart" class="btn">다시 시작</button>
+      </div>
+    </header>
 
-  <div id="gameContainer">
-    <div id="info">
-      점수: <span id="score">0</span> | 남은 줄: <span id="rows">5</span>
+    <div class="board">
+      <canvas id="game" width="480" height="680" aria-label="Bubble Shooter"></canvas>
     </div>
-    <canvas id="gameCanvas"></canvas>
-    <button onclick="restartGame()">다시 시작</button>
+    <p class="hint">손가락(또는 마우스)으로 조준해 탭/클릭하여 발사! · 같은 색 3개 이상이면 터집니다.</p>
+  </div>
+
+  <!-- Game Over -->
+  <div class="overlay" id="gameover">
+    <div class="card">
+      <h2>게임 오버 💀</h2>
+      <p>최종 점수: <b id="final-score">0</b> · 발사수: <b id="shots-used">0</b></p>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="again" class="btn">다시 시작</button>
+        <button id="go-help" class="btn">도움말</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help -->
+  <div class="overlay" id="helpbox">
+    <div class="card help">
+      <h2>🎮 게임 방법</h2>
+      <ul>
+        <li><b>목표:</b> 같은 색 버블을 <b>3개 이상</b> 연결해 터뜨리기</li>
+        <li><b>조작:</b> 화면을 탭(클릭)해 <b>그 방향</b>으로 발사</li>
+        <li><b>줄 내려옴:</b> <b>발사 5번</b>마다 위 줄이 1칸 내려와요</li>
+        <li><b>점수:</b> 터뜨린 개수 × 10점, 떨어진 버블은 절반 점수</li>
+        <li><b>끝:</b> 버블이 바닥선에 닿으면 <b>게임 오버</b></li>
+        <li><b>팁:</b> 가로모드가 더 넓어요 · 홈화면에 추가하면 앱처럼 열려요</li>
+      </ul>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="help-close" class="btn">닫기</button>
+        <button id="help-restart" class="btn">다시 시작</button>
+      </div>
+    </div>
   </div>
 
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const scoreEl = document.getElementById("score");
-const rowsEl = document.getElementById("rows");
+(() => {
+  // ====== Elements ======
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const rowsLeftEl = document.getElementById('rows-left');
+  const nextColorEl = document.getElementById('next-color');
+  const overlay = document.getElementById('gameover');
+  const finalScoreEl = document.getElementById('final-score');
+  const shotsUsedEl = document.getElementById('shots-used');
+  const againBtn = document.getElementById('again');
+  const goHelpBtn = document.getElementById('go-help');
+  const helpBtn = document.getElementById('help');
+  const helpBox = document.getElementById('helpbox');
+  const helpClose = document.getElementById('help-close');
+  const helpRestart = document.getElementById('help-restart');
+  const restartBtn = document.getElementById('restart');
 
-canvas.width = Math.min(window.innerWidth * 0.9, 420);
-canvas.height = canvas.width * 1.2;
+  // ====== Config ======
+  const COLORS = ['#4fc3f7','#ab47bc','#ff7043','#ffd54f','#66bb6a','#29b6f6','#ec407a','#9ccc65'];
+  const MAX_CANVAS_W = 480;
+  const SAFE_BOTTOM = 60;
+  const INIT_ROWS = 5;
+  const SHOTS_PER_NEWROW = 5;
+  const SCORE_PER_BUBBLE = 10;
 
-let bubbles = [];
-let colors = ["#ff6b6b", "#ffd93d", "#6bcB77", "#4d96ff", "#c77dff"];
-let shooter = { x: canvas.width / 2, y: canvas.height - 40, color: colors[0] };
-let score = 0;
-let rows = 5;
-let bullet = null;
+  // hex layout
+  let R = 16, H_SP = 32, V_SP = 28;
+  let GRID_COLS = 12, GRID_ROWS = 22;
+  const TOP_OFFSET = 18;
 
-// 버블 초기화
-function initBubbles() {
-  bubbles = [];
-  const r = 15;
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < 12; col++) {
-      if (row % 2 === 0 && col === 11) continue;
-      const x = col * r * 2 + (row % 2 === 0 ? r : 0);
-      const y = row * r * 2 + 30;
-      bubbles.push({ x, y, color: colors[Math.floor(Math.random() * colors.length)], r });
+  // ====== State ======
+  let grid = [];
+  let shooter = {x:0,y:0,angle:-Math.PI/2};
+  let active = null;
+  let nextColor = randColor();
+  let score = 0, shots = 0, shotsLeft = SHOTS_PER_NEWROW;
+  let gameOver = false;
+
+  // ====== Helpers ======
+  function randColor(){ return COLORS[(Math.random()*COLORS.length)|0]; }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+  function dist2(x1,y1,x2,y2){ const dx=x1-x2, dy=y1-y2; return dx*dx+dy*dy; }
+
+  // DPR-safe responsive canvas
+  function resize() {
+    const cssW = Math.min(window.innerWidth*0.95, MAX_CANVAS_W);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = cssW + 'px';
+    const targetH = Math.round(cssW * 1.35);
+    canvas.style.height = targetH + 'px';
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(targetH * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    R = Math.max(13, Math.min(18, Math.round(cssW/30)));
+    H_SP = 2*R;
+    V_SP = Math.sqrt(3)*R*0.95;
+    GRID_COLS = Math.max(10, Math.floor((cssW - R)/H_SP));
+    GRID_ROWS = Math.floor((canvas.height/dpr - TOP_OFFSET - SAFE_BOTTOM)/V_SP) - 1;
+
+    shooter = { x: (cssW/2), y: (canvas.height/dpr - SAFE_BOTTOM/2), angle: -Math.PI/2 };
+  }
+
+  function newGrid() {
+    grid = Array.from({length: GRID_ROWS}, ()=> Array(GRID_COLS).fill(null));
+    for (let r=0; r<INIT_ROWS; r++){
+      for (let c=0; c<GRID_COLS - (r%2?1:0); c++){
+        grid[r][c] = randColor();
+      }
     }
   }
-}
 
-// 버블 그리기
-function drawBubbles() {
-  bubbles.forEach(b => {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-    ctx.fillStyle = b.color;
-    ctx.fill();
-    ctx.closePath();
+  function colCountForRow(r){ return GRID_COLS - (r%2?1:0); }
+
+  function cellToXY(r,c){
+    const x = R + (r%2? R : 0) + c*H_SP + R;
+    const y = TOP_OFFSET + r*V_SP + R;
+    return {x,y};
+  }
+
+  function xyToCell(x,y){
+    let r = Math.round((y - TOP_OFFSET - R)/V_SP);
+    r = clamp(r, 0, GRID_ROWS-1);
+    const offset = (r%2 ? R : 0) + R;
+    let c = Math.round((x - offset)/H_SP);
+    c = clamp(c, 0, colCountForRow(r)-1);
+    return {r,c};
+  }
+
+  function neighbors(r,c){
+    const odd = r%2===1;
+    const list = [
+      [r, c-1], [r, c+1],
+      [r-1, c-(odd?0:1)], [r-1, c+(odd?1:0)],
+      [r+1, c-(odd?0:1)], [r+1, c+(odd?1:0)]
+    ];
+    return list.filter(([rr,cc]) => rr>=0 && rr<GRID_ROWS && cc>=0 && cc<colCountForRow(rr));
+  }
+
+  function endGame(){
+    gameOver = true;
+    finalScoreEl.textContent = String(score);
+    shotsUsedEl.textContent = String(shots);
+    overlay.style.display = 'grid';
+  }
+
+  function addTopRow(){
+    grid.pop();
+    grid.unshift(Array(GRID_COLS).fill(null));
+    for (let c=0;c<colCountForRow(0);c++) grid[0][c] = randColor();
+    // check bottom collision right away
+    for (let r=GRID_ROWS-1;r>=0;r--){
+      for (let c=0;c<colCountForRow(r);c++){
+        if (grid[r][c]){
+          const {y} = cellToXY(r,c);
+          if (y + R >= shooter.y - R) { endGame(); return; }
+        }
+      }
+    }
+  }
+
+  function reset(){
+    score=0; shots=0; shotsLeft=SHOTS_PER_NEWROW; gameOver=false;
+    scoreEl.textContent='0'; rowsLeftEl.textContent=String(shotsLeft);
+    overlay.style.display='none'; helpBox.style.display='none';
+    resize(); newGrid(); active=null; nextColor=randColor(); paintNext();
+  }
+
+  function paintNext(){ nextColorEl.style.background = nextColor; }
+
+  // ====== Input ======
+  function aimTo(mx,my){
+    const dx = mx - shooter.x, dy = my - shooter.y;
+    let ang = Math.atan2(dy, dx);
+    // restrict to shoot upward only
+    if (ang > -0.1) ang = -0.1;
+    if (ang < -Math.PI+0.1) ang = -Math.PI+0.1;
+    shooter.angle = ang;
+  }
+
+  function shoot(mx,my){
+    if (gameOver || active) return;
+    aimTo(mx,my);
+    const speed = Math.max(320, Math.min(560, R*28));
+    active = {
+      x: shooter.x, y: shooter.y,
+      vx: Math.cos(shooter.angle)*speed,
+      vy: Math.sin(shooter.angle)*speed,
+      color: nextColor
+    };
+    nextColor = randColor(); paintNext();
+    shots++; shotsLeft--; if (shotsLeft<=0){ addTopRow(); shotsLeft = SHOTS_PER_NEWROW; }
+    rowsLeftEl.textContent = String(shotsLeft);
+  }
+
+  canvas.addEventListener('mousemove', e=>{
+    const r=canvas.getBoundingClientRect(); aimTo(e.clientX-r.left, e.clientY-r.top);
   });
-}
+  canvas.addEventListener('mousedown', e=>{
+    const r=canvas.getBoundingClientRect(); shoot(e.clientX-r.left, e.clientY-r.top);
+  });
+  canvas.addEventListener('touchstart', e=>{
+    const t=e.touches[0]; const r=canvas.getBoundingClientRect();
+    shoot(t.clientX-r.left, t.clientY-r.top);
+  }, {passive:true});
 
-// 발사체
-function drawShooter() {
-  ctx.beginPath();
-  ctx.arc(shooter.x, shooter.y, 15, 0, Math.PI * 2);
-  ctx.fillStyle = shooter.color;
-  ctx.fill();
-  ctx.closePath();
-}
+  // ====== Mechanics ======
+  function update(dt){
+    if (!active) return;
+    active.x += active.vx * dt;
+    active.y += active.vy * dt;
 
-// 발사
-function shootBubble(targetX, targetY) {
-  if (bullet) return; // 이미 발사 중
-  const dx = targetX - shooter.x;
-  const dy = targetY - shooter.y;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  bullet = {
-    x: shooter.x,
-    y: shooter.y,
-    dx: (dx / len) * 5,
-    dy: (dy / len) * 5,
-    color: shooter.color,
-  };
-}
+    // side walls bounce
+    if (active.x <= R+2){ active.x=R+2; active.vx*=-1; }
+    if (active.x >= canvas.clientWidth - R-2){ active.x=canvas.clientWidth-R-2; active.vx*=-1; }
 
-// 게임 루프
-function update() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBubbles();
-  drawShooter();
+    // snap on top
+    if (active.y <= TOP_OFFSET + R){ snapActive(); return; }
 
-  if (bullet) {
-    bullet.x += bullet.dx;
-    bullet.y += bullet.dy;
-    ctx.beginPath();
-    ctx.arc(bullet.x, bullet.y, 10, 0, Math.PI * 2);
-    ctx.fillStyle = bullet.color;
-    ctx.fill();
-    ctx.closePath();
-
-    // 충돌 감지
-    for (let i = 0; i < bubbles.length; i++) {
-      const b = bubbles[i];
-      const dist = Math.sqrt((bullet.x - b.x) ** 2 + (bullet.y - b.y) ** 2);
-      if (dist < b.r + 10) {
-        bubbles.splice(i, 1);
-        score += 10;
-        scoreEl.textContent = score;
-        bullet = null;
-        shooter.color = colors[Math.floor(Math.random() * colors.length)];
-        break;
+    // collide with existing bubbles
+    outer:
+    for (let r=0;r<GRID_ROWS;r++){
+      for (let c=0;c<colCountForRow(r);c++){
+        const color=grid[r][c]; if (!color) continue;
+        const pos = cellToXY(r,c);
+        if (dist2(active.x, active.y, pos.x, pos.y) <= (2*R - 1)**2){
+          snapActive(); break outer;
+        }
       }
     }
 
-    // 화면 밖이면 리셋
-    if (bullet && (bullet.y < 0 || bullet.x < 0 || bullet.x > canvas.width)) {
-      bullet = null;
-      shooter.color = colors[Math.floor(Math.random() * colors.length)];
+    // ---- bottom guard (공이 밑으로 빠지는 문제 방지) ----
+    if (active && active.y >= shooter.y - R){
+      // 강제로 바로 위의 빈칸에 스냅
+      snapActive(true);
     }
   }
 
-  requestAnimationFrame(update);
-}
+  function placeInNearestEmpty(r,c){
+    if (isEmpty(r,c)){ grid[r][c] = active.color; return true; }
+    // BFS to nearest empty cell around intended spot
+    const vis=new Set(), q=[[r,c]];
+    while(q.length){
+      const [rr,cc] = q.shift();
+      const key=rr+','+cc; if (vis.has(key)) continue; vis.add(key);
+      if (isInside(rr,cc)){
+        if (isEmpty(rr,cc)){ grid[rr][cc]=active.color; return true; }
+        neighbors(rr,cc).forEach(n=>q.push(n));
+      }
+    }
+    return false;
+  }
 
-// 이벤트 (터치 + 클릭)
-canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  shootBubble(e.clientX - rect.left, e.clientY - rect.top);
-});
+  function isInside(r,c){ return r>=0 && r<GRID_ROWS && c>=0 && c<colCountForRow(r); }
+  function isEmpty(r,c){ return isInside(r,c) && !grid[r][c]; }
 
-canvas.addEventListener("touchstart", e => {
-  const rect = canvas.getBoundingClientRect();
-  const touch = e.touches[0];
-  shootBubble(touch.clientX - rect.left, touch.clientY - rect.top);
-});
+  function snapActive(forceAbove=false){
+    let {r,c} = xyToCell(active.x, active.y);
+    if (forceAbove) r = clamp(r-1, 0, GRID_ROWS-1);
+    if (!placeInNearestEmpty(r,c)){
+      // try slightly higher row
+      if (!placeInNearestEmpty(clamp(r-1,0,GRID_ROWS-1),c)){
+        // fallback: scan from top to bottom for first empty near x
+        for (let rr=0; rr<GRID_ROWS; rr++){
+          const cc = clamp(Math.round(c), 0, colCountForRow(rr)-1);
+          if (placeInNearestEmpty(rr,cc)) break;
+        }
+      }
+    }
+    active = null;
+    resolveBoard();
+  }
 
-// 다시 시작
-function restartGame() {
-  score = 0;
-  scoreEl.textContent = score;
-  rows = 5;
-  rowsEl.textContent = rows;
-  bullet = null;
-  shooter.color = colors[Math.floor(Math.random() * colors.length)];
-  initBubbles();
-}
+  function resolveBoard(){
+    // remove clusters (>=3)
+    const toRemove = new Set();
+    for (let r=0;r<GRID_ROWS;r++){
+      for (let c=0;c<colCountForRow(r);c++){
+        const color=grid[r][c]; if (!color) continue;
+        const cluster = floodSame(r,c,color);
+        if (cluster.length>=3) cluster.forEach(k=>toRemove.add(k));
+      }
+    }
+    if (toRemove.size){
+      toRemove.forEach(key=>{ const [rr,cc]=key.split(',').map(Number); grid[rr][cc]=null; });
+      const removed = toRemove.size;
+      score += removed * SCORE_PER_BUBBLE; scoreEl.textContent = String(score);
+    }
+    // drop floating
+    dropFloating();
+    // bottom check
+    for (let r=0;r<GRID_ROWS;r++){
+      for (let c=0;c<colCountForRow(r);c++){
+        if (!grid[r][c]) continue;
+        const {y} = cellToXY(r,c);
+        if (y + R >= shooter.y - R) { endGame(); return; }
+      }
+    }
+  }
 
-initBubbles();
-update();
+  function floodSame(sr,sc,color){
+    const vis=new Set(), out=[], q=[[sr,sc]];
+    while(q.length){
+      const [r,c] = q.pop();
+      const key=r+','+c; if (vis.has(key)) continue; vis.add(key);
+      if (!isInside(r,c) || grid[r][c]!==color) continue;
+      out.push(key); neighbors(r,c).forEach(([rr,cc])=>q.push([rr,cc]));
+    }
+    return out;
+  }
+
+  function dropFloating(){
+    const vis=new Set(), q=[];
+    for (let c=0;c<colCountForRow(0);c++){ if (grid[0][c]) q.push([0,c]); }
+    while(q.length){
+      const [r,c]=q.pop(); const key=r+','+c; if (vis.has(key)) continue; vis.add(key);
+      neighbors(r,c).forEach(([rr,cc])=>{ if (grid[rr][cc]) q.push([rr,cc]); });
+    }
+    let dropped=0;
+    for (let r=0;r<GRID_ROWS;r++){
+      for (let c=0;c<colCountForRow(r);c++){
+        if (grid[r][c] && !vis.has(r+','+c)){ grid[r][c]=null; dropped++; }
+      }
+    }
+    if (dropped){ score += dropped * (SCORE_PER_BUBBLE/2); scoreEl.textContent=String(score); }
+  }
+
+  // ====== Render ======
+  function draw(){
+    ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+
+    // bubbles
+    for (let r=0;r<GRID_ROWS;r++){
+      for (let c=0;c<colCountForRow(r);c++){
+        const color=grid[r][c]; if (!color) continue;
+        const {x,y}=cellToXY(r,c);
+        drawBubble(x,y,color);
+      }
+    }
+
+    // active
+    if (active) drawBubble(active.x, active.y, active.color);
+
+    // aim guide
+    ctx.globalAlpha=.5;
+    ctx.beginPath();
+    ctx.moveTo(shooter.x, shooter.y);
+    ctx.lineTo(shooter.x + Math.cos(shooter.angle)*80, shooter.y + Math.sin(shooter.angle)*80);
+    ctx.lineWidth=4; ctx.strokeStyle='#9cc9ff';
+    ctx.stroke(); ctx.globalAlpha=1;
+
+    // floor line
+    ctx.beginPath();
+    ctx.moveTo(8, shooter.y+R);
+    ctx.lineTo(canvas.clientWidth-8, shooter.y+R);
+    ctx.lineWidth=2; ctx.strokeStyle='#214f7a';
+    ctx.stroke();
+  }
+
+  function drawBubble(x,y,color){
+    ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2);
+    const g=ctx.createRadialGradient(x-R/3,y-R/3,R*0.2,x,y,R);
+    g.addColorStop(0, lighten(color,.25)); g.addColorStop(1,color);
+    ctx.fillStyle=g; ctx.fill();
+    ctx.beginPath(); ctx.arc(x-R/3,y-R/3,R*0.35,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,.25)'; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.stroke();
+  }
+
+  function lighten(hex, amt){
+    const c=parseInt(hex.slice(1),16);
+    let r=(c>>16)&255, g=(c>>8)&255, b=c&255;
+    r=Math.min(255, Math.round(r+(255-r)*amt));
+    g=Math.min(255, Math.round(g+(255-g)*amt));
+    b=Math.min(255, Math.round(b+(255-b)*amt));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // ====== Loop ======
+  let last=0;
+  function tick(ts){
+    if (!last) last = ts;
+    const dt = Math.min(0.033, (ts-last)/1000);
+    last = ts;
+    if (!gameOver){
+      update(dt); draw();
+      requestAnimationFrame(tick);
+    }
+  }
+
+  // ====== UI wiring ======
+  restartBtn.addEventListener('click', reset);
+  againBtn.addEventListener('click', reset);
+  goHelpBtn.addEventListener('click', ()=>{ overlay.style.display='none'; helpBox.style.display='grid'; });
+  helpBtn.addEventListener('click', ()=> helpBox.style.display='grid');
+  helpClose.addEventListener('click', ()=> helpBox.style.display='none');
+  helpRestart.addEventListener('click', ()=>{ helpBox.style.display='none'; reset(); });
+
+  window.addEventListener('resize', ()=>{
+    const wasActive = !!active;
+    resize(); if (wasActive) active=null; // 안전
+  });
+
+  // ====== Start ======
+  window.onload = () => { reset(); requestAnimationFrame(tick); };
+})();
 </script>
 </body>
 </html>
